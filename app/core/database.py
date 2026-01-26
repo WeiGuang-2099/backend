@@ -16,14 +16,23 @@ class SimpleDatabase:
     def __init__(self):
         self.users: Dict[int, UserInDB] = {}
         self.user_id_counter = 1
-        self._initialize_with_sample_data()
+        # 延迟初始化示例数据，避免循环导入
+        self._sample_data_initialized = False
 
+    def _ensure_initialized(self):
+        """确保示例数据已初始化"""
+        if not self._sample_data_initialized:
+            self._initialize_with_sample_data()
+            self._sample_data_initialized = True
+    
     def get_user(self, user_id: int) -> Optional[UserInDB]:
         """根据ID获取用户"""
+        self._ensure_initialized()
         return self.users.get(user_id)
     
     def get_all_users(self) -> List[UserInDB]:
         """获取所有用户"""
+        self._ensure_initialized()
         return list(self.users.values())
 
     def create_user(self, user_create: UserCreate) -> UserInDB:
@@ -59,26 +68,39 @@ class SimpleDatabase:
         return False
     
     def _initialize_with_sample_data(self):
-        """初始化示例数据"""
+        """初始化示例数据（使用加密密码）"""
+        # 导入放在这里避免循环导入
+        from app.core.security import get_password_hash
+        
         sample_users = [
-            UserCreate(
-                username="john",
-                email="john@example.com",
-                password="password123"
-            ),
-            UserCreate(
-                username="jane",
-                email="jane@example.com",
-                password="password456"
-            ),
-            UserCreate(
-                username="alice",
-                email="alice@example.com",
-                password="password789"
-            )
+            {
+                "username": "john",
+                "email": "john@example.com",
+                "password": "password123"
+            },
+            {
+                "username": "jane",
+                "email": "jane@example.com",
+                "password": "password456"
+            },
+            {
+                "username": "alice",
+                "email": "alice@example.com",
+                "password": "password789"
+            }
         ]
+        
         for user_data in sample_users:
-            self.create_user(user_data)
+            # 加密密码
+            hashed_password = get_password_hash(user_data["password"])
+            
+            # 创建用户（使用加密后的密码）
+            user_create = UserCreate(
+                username=user_data["username"],
+                email=user_data["email"],
+                password=hashed_password
+            )
+            self.create_user(user_create)
 
 
 # 创建全局数据库实例

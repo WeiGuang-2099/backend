@@ -44,6 +44,13 @@ class UserLogin(BaseModel):
     password: str
 
 
+class TokenResponse(BaseModel):
+    """Token 响应模型"""
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
+
 # 内部使用的完整用户模型（包含密码）
 class UserInDB(UserBase):
     """数据库中的完整用户模型 - 仅内部使用"""

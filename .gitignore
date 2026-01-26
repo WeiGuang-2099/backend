@@ -48,6 +48,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+.pytest_cache
 
 # Translations
 *.mo
@@ -85,6 +86,13 @@ ipython_config.py
 # pipenv
 Pipfile.lock
 
+# poetry
+poetry.lock
+
+# pdm
+.pdm.toml
+__pypackages__/
+
 # PEP 582
 __pypackages__/
 
@@ -97,6 +105,8 @@ celerybeat.pid
 
 # Environments
 .env
+.env.local
+.env.*.local
 .venv
 env/
 venv/
@@ -122,22 +132,63 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
 # IDEs
 .vscode/
 .idea/
+.cursor/
 *.swp
 *.swo
 *~
+.project
+.pydevproject
+.settings/
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+Desktop.ini
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
+*.db-journal
+
+# Alembic migrations (optional - comment out if you want to track them)
+# alembic/versions/*.py
 
 # Logs
 logs/
 *.log
+*.log.*
+
+# FastAPI specific
+.pytest_cache/
+.ruff_cache/
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Local testing
+test.db
+test_*.db
+local_test_data/
