@@ -192,3 +192,12 @@ temp/
 test.db
 test_*.db
 local_test_data/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+*.pid
+
+# MySQL data (if using local volumes)
+mysql_data/
+data/

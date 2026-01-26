@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.routes import api_router
+from app.core.database import init_db
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -20,6 +21,12 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(api_router, prefix=settings.API_PREFIX)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """应用启动时初始化数据库"""
+    init_db()
 
 
 @app.get("/")

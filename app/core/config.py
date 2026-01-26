@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    # 数据库配置（示例）
-    # DATABASE_URL: str = "sqlite:///./test.db"
+    # MySQL 数据库配置
+    DATABASE_URL: str = "mysql+pymysql://jwt_user:jwt_password@localhost:3306/jwt_auth_db"
     
     class Config:
         env_file = ".env"

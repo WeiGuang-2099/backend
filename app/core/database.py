@@ -1,107 +1,55 @@
 """
-Author: yuheng li a1793138
-Date: 2026-01-20 04:58:37
-LastEditors: yuheng 
-LastEditTime: 2026-01-20 05:04:40
-FilePath: /task-all/backend/app/core/database.py
-Description: Simple in-memory database implementation
-
-Copyright (c) 2024 by yuheng li, All Rights Reserved. 
+MySQL 数据库连接和操作
 """
-from app.schemas.user import UserInDB, UserCreate, UserUpdate
-from typing import Dict, List, Optional
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.exc import OperationalError
+from app.core.config import settings
+from app.models.user import Base
+import time
+
+# 创建数据库引擎（添加连接池配置）
+engine = create_engine(
+    settings.DATABASE_URL, 
+    echo=True,
+    pool_pre_ping=True,  # 连接前先 ping，确保连接有效
+    pool_recycle=3600,   # 1小时回收连接
+)
+
+# 创建会话工厂
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-class SimpleDatabase:
-    def __init__(self):
-        self.users: Dict[int, UserInDB] = {}
-        self.user_id_counter = 1
-        # 延迟初始化示例数据，避免循环导入
-        self._sample_data_initialized = False
-
-    def _ensure_initialized(self):
-        """确保示例数据已初始化"""
-        if not self._sample_data_initialized:
-            self._initialize_with_sample_data()
-            self._sample_data_initialized = True
+def init_db(retries=5, delay=2):
+    """
+    初始化数据库：创建所有表
     
-    def get_user(self, user_id: int) -> Optional[UserInDB]:
-        """根据ID获取用户"""
-        self._ensure_initialized()
-        return self.users.get(user_id)
-    
-    def get_all_users(self) -> List[UserInDB]:
-        """获取所有用户"""
-        self._ensure_initialized()
-        return list(self.users.values())
-
-    def create_user(self, user_create: UserCreate) -> UserInDB:
-        """创建新用户"""
-        # 创建完整的UserInDB对象
-        new_user = UserInDB(
-            id=self.user_id_counter,
-            username=user_create.username,
-            email=user_create.email,
-            password=user_create.password  # 注意：实际应用中应该hash密码
-        )
-        self.users[self.user_id_counter] = new_user
-        self.user_id_counter += 1
-        return new_user
-    
-    def update_user(self, user_id: int, user_update: UserUpdate) -> Optional[UserInDB]:
-        """更新用户"""
-        user = self.users.get(user_id)
-        if not user:
-            return None
-        
-        # 只更新提供的字段
-        update_data = user_update.dict(exclude_unset=True)
-        updated_user = user.copy(update=update_data)
-        self.users[user_id] = updated_user
-        return updated_user
-    
-    def delete_user(self, user_id: int) -> bool:
-        """删除用户"""
-        if user_id in self.users:
-            del self.users[user_id]
-            return True
-        return False
-    
-    def _initialize_with_sample_data(self):
-        """初始化示例数据（使用加密密码）"""
-        # 导入放在这里避免循环导入
-        from app.core.security import get_password_hash
-        
-        sample_users = [
-            {
-                "username": "john",
-                "email": "john@example.com",
-                "password": "password123"
-            },
-            {
-                "username": "jane",
-                "email": "jane@example.com",
-                "password": "password456"
-            },
-            {
-                "username": "alice",
-                "email": "alice@example.com",
-                "password": "password789"
-            }
-        ]
-        
-        for user_data in sample_users:
-            # 加密密码
-            hashed_password = get_password_hash(user_data["password"])
-            
-            # 创建用户（使用加密后的密码）
-            user_create = UserCreate(
-                username=user_data["username"],
-                email=user_data["email"],
-                password=hashed_password
-            )
-            self.create_user(user_create)
+    Args:
+        retries: 重试次数
+        delay: 重试间隔（秒）
+    """
+    for attempt in range(retries):
+        try:
+            print(f"正在连接数据库... (尝试 {attempt + 1}/{retries})")
+            Base.metadata.create_all(bind=engine)
+            print("数据库连接成功，表已创建")
+            return
+        except OperationalError as e:
+            if attempt < retries - 1:
+                print(f"连接失败，{delay}秒后重试... 错误: {e}")
+                time.sleep(delay)
+            else:
+                print(f"数据库连接失败，请检查：")
+                print(f"   1. MySQL 是否已启动: docker-compose ps")
+                print(f"   2. 端口 3306 是否可用")
+                print(f"   3. 连接信息是否正确: {settings.DATABASE_URL}")
+                raise
 
 
-# 创建全局数据库实例
-db = SimpleDatabase()
+def get_db():
+    """获取数据库会话"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

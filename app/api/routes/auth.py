@@ -2,21 +2,24 @@
 认证相关路由：登录、注册、获取当前用户信息
 """
 from fastapi import APIRouter, HTTPException, status, Depends
+from sqlalchemy.orm import Session
 from app.schemas.user import UserLogin, UserCreate, UserResponse, TokenResponse
-from app.core.database import db
+from app.core.database import get_db
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.core.auth import get_current_user
+from app.crud import user as crud_user
 
 router = APIRouter()
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(user: UserCreate):
+async def register(user: UserCreate, db: Session = Depends(get_db)):
     """
     用户注册
     
     Args:
         user: 用户注册信息
+        db: 数据库会话
         
     Returns:
         TokenResponse: 包含 access_token 和用户信息
@@ -25,18 +28,18 @@ async def register(user: UserCreate):
         HTTPException: 用户名或邮箱已存在时返回 400
     """
     # 检查用户名是否已存在
-    existing_users = db.get_all_users()
-    for existing_user in existing_users:
-        if existing_user.username == user.username:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username already exists"
-            )
-        if existing_user.email == user.email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already exists"
-            )
+    if crud_user.get_user_by_username(db, user.username):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already exists"
+        )
+    
+    # 检查邮箱是否已存在
+    if crud_user.get_user_by_email(db, user.email):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already exists"
+        )
     
     # 对密码进行哈希加密
     hashed_password = get_password_hash(user.password)
@@ -44,7 +47,7 @@ async def register(user: UserCreate):
     # 创建新用户（替换明文密码为哈希密码）
     user_data = user.model_copy()
     user_data.password = hashed_password
-    new_user = db.create_user(user_data)
+    new_user = crud_user.create_user(db, user_data)
     
     # 生成 JWT Token
     access_token = create_access_token(data={"sub": new_user.id, "username": new_user.username})
@@ -52,17 +55,22 @@ async def register(user: UserCreate):
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
-        user=new_user
+        user=UserResponse(
+            id=new_user.id,
+            username=new_user.username,
+            email=new_user.email
+        )
     )
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(user_login: UserLogin):
+async def login(user_login: UserLogin, db: Session = Depends(get_db)):
     """
     用户登录
     
     Args:
         user_login: 登录凭证（用户名和密码）
+        db: 数据库会话
         
     Returns:
         TokenResponse: 包含 access_token 和用户信息
@@ -71,12 +79,7 @@ async def login(user_login: UserLogin):
         HTTPException: 凭证无效时返回 401
     """
     # 查找用户
-    users = db.get_all_users()
-    user = None
-    for u in users:
-        if u.username == user_login.username:
-            user = u
-            break
+    user = crud_user.get_user_by_username(db, user_login.username)
     
     if not user:
         raise HTTPException(
