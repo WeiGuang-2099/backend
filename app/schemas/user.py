@@ -44,6 +44,26 @@ class UserLogin(BaseModel):
     password: str
 
 
+class TokenResponse(BaseModel):
+    """Token 响应模型"""
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
+
+class UserIdRequest(BaseModel):
+    """用户ID请求模型 - 用于POST方式获取/删除用户"""
+    user_id: int = Field(..., description="用户ID")
+
+
+class UserUpdateRequest(BaseModel):
+    """用户更新请求模型 - 用于POST方式更新用户"""
+    user_id: int = Field(..., description="用户ID")
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    email: Optional[EmailStr] = None
+    password: Optional[str] = Field(None, min_length=6)
+
+
 # 内部使用的完整用户模型（包含密码）
 class UserInDB(UserBase):
     """数据库中的完整用户模型 - 仅内部使用"""
