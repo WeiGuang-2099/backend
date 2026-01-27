@@ -1,13 +1,23 @@
 """
-认证相关路由：登录、注册、获取当前用户信息
+Author: yuheng li a1793138
+Date: 2026-01-27
+LastEditors: yuheng
+LastEditTime: 2026-01-27
+FilePath: /backend/app/api/routes/auth.py
+Description: Authentication API routes - 认证相关路由层
+
+该层只负责处理HTTP请求和响应，认证业务逻辑由Service层处理。
+遵循三层架构原则：API层 -> Service层 -> Repository层
+
+Copyright (c) 2026 by yuheng li, All Rights Reserved.
 """
 from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from app.schemas.user import UserLogin, UserCreate, UserResponse, TokenResponse
 from app.core.database import get_db
-from app.core.security import verify_password, get_password_hash, create_access_token
+from app.core.security import create_access_token
 from app.core.auth import get_current_user
-from app.crud import user as crud_user
+from app.services.user_service import user_service
 
 router = APIRouter()
 
@@ -16,6 +26,9 @@ router = APIRouter()
 async def register(user: UserCreate, db: Session = Depends(get_db)):
     """
     用户注册
+    
+    API层只负责请求处理和异常转换，
+    所有业务逻辑（重复检查、密码加密）由Service层处理
     
     Args:
         user: 用户注册信息
@@ -27,46 +40,35 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     Raises:
         HTTPException: 用户名或邮箱已存在时返回 400
     """
-    # 检查用户名是否已存在
-    if crud_user.get_user_by_username(db, user.username):
+    try:
+        # 调用Service层处理注册业务逻辑
+        new_user = user_service.register_user(db, user)
+        
+        # API层只负责生成Token和返回响应
+        access_token = create_access_token(
+            data={"sub": new_user.id, "username": new_user.username}
+        )
+        
+        return TokenResponse(
+            access_token=access_token,
+            token_type="bearer",
+            user=new_user
+        )
+    except ValueError as e:
+        # 将业务逻辑异常转换为HTTP异常
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already exists"
+            detail=str(e)
         )
-    
-    # 检查邮箱是否已存在
-    if crud_user.get_user_by_email(db, user.email):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already exists"
-        )
-    
-    # 对密码进行哈希加密
-    hashed_password = get_password_hash(user.password)
-    
-    # 创建新用户（替换明文密码为哈希密码）
-    user_data = user.model_copy()
-    user_data.password = hashed_password
-    new_user = crud_user.create_user(db, user_data)
-    
-    # 生成 JWT Token
-    access_token = create_access_token(data={"sub": new_user.id, "username": new_user.username})
-    
-    return TokenResponse(
-        access_token=access_token,
-        token_type="bearer",
-        user=UserResponse(
-            id=new_user.id,
-            username=new_user.username,
-            email=new_user.email
-        )
-    )
 
 
 @router.post("/login", response_model=TokenResponse)
 async def login(user_login: UserLogin, db: Session = Depends(get_db)):
     """
     用户登录
+    
+    API层只负责请求处理和异常转换，
+    认证逻辑（查找用户、验证密码）由Service层处理
     
     Args:
         user_login: 登录凭证（用户名和密码）
@@ -78,8 +80,8 @@ async def login(user_login: UserLogin, db: Session = Depends(get_db)):
     Raises:
         HTTPException: 凭证无效时返回 401
     """
-    # 查找用户
-    user = crud_user.get_user_by_username(db, user_login.username)
+    # 调用Service层处理认证业务逻辑
+    user = user_service.authenticate_user(db, user_login.username, user_login.password)
     
     if not user:
         raise HTTPException(
@@ -87,24 +89,15 @@ async def login(user_login: UserLogin, db: Session = Depends(get_db)):
             detail="Invalid username or password"
         )
     
-    # 验证密码
-    if not verify_password(user_login.password, user.password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password"
-        )
-    
-    # 生成 JWT Token
-    access_token = create_access_token(data={"sub": user.id, "username": user.username})
+    # API层只负责生成Token和返回响应
+    access_token = create_access_token(
+        data={"sub": user.id, "username": user.username}
+    )
     
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
-        user=UserResponse(
-            id=user.id,
-            username=user.username,
-            email=user.email
-        )
+        user=user
     )
 
 
