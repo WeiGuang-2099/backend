@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.security import decode_access_token
 from app.core.database import get_db
 from app.schemas.user import UserResponse
-from app.crud import user as crud_user
+from app.user_repo import user as user_repo
 
 # HTTP Bearer Token 方案
 security = HTTPBearer()
@@ -51,7 +51,7 @@ async def get_current_user(
         )
     
     # 从数据库获取用户
-    user = crud_user.get_user_by_id(db, user_id)
+    user = user_repo.get_user_by_id(db, user_id)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

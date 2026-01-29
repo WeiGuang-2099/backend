@@ -1,17 +1,17 @@
 """
 初始化示例用户到数据库
+
+注意：运行此脚本前，请确保已经应用了数据库迁移：
+    alembic upgrade head
 """
-from app.core.database import SessionLocal, init_db
+from app.core.database import SessionLocal
 from app.core.security import get_password_hash
-from app.crud import user as crud_user
+from app.user_repo import user as user_repo
 from app.schemas.user import UserCreate
 
 
 def init_sample_users():
     """创建示例用户"""
-    # 初始化数据库表
-    init_db()
-    
     db = SessionLocal()
     
     try:
@@ -35,7 +35,7 @@ def init_sample_users():
         
         for user_data in sample_users:
             # 检查用户是否已存在
-            existing_user = crud_user.get_user_by_username(db, user_data["username"])
+            existing_user = user_repo.get_user_by_username(db, user_data["username"])
             if existing_user:
                 print(f"用户 {user_data['username']} 已存在，跳过")
                 continue
@@ -50,7 +50,7 @@ def init_sample_users():
                 password=hashed_password
             )
             
-            new_user = crud_user.create_user(db, user_create)
+            new_user = user_repo.create_user(db, user_create)
             print(f"创建用户: {new_user.username} (ID: {new_user.id})")
         
         print("\n 示例用户初始化完成！")

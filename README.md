@@ -77,8 +77,12 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-#### 4. 初始化数据库
+#### 4. 初始化数据库（使用Alembic迁移）
 ```bash
+# 应用数据库迁移
+alembic upgrade head
+
+# 可选：初始化示例用户数据
 python init_sample_users.py
 ```
 
@@ -148,6 +152,7 @@ curl -X GET "http://localhost:8000/api/v1/auth/me" \
 
 - **FastAPI**: 现代、快速的 Web 框架
 - **SQLAlchemy**: ORM 数据库操作
+- **Alembic**: 数据库迁移工具
 - **MySQL**: 关系型数据库
 - **PyMySQL**: MySQL 数据库驱动
 - **JWT**: JSON Web Token 认证
@@ -160,4 +165,31 @@ curl -X GET "http://localhost:8000/api/v1/auth/me" \
 - JWT Token 默认有效期为 30 分钟（可在 `.env` 中配置）
 - 数据库使用 MySQL 8.0
 - 示例用户账号：`admin/admin123` 和 `user/user123`
+
+## 数据库迁移
+
+本项目使用 Alembic 管理数据库迁移。**所有数据库表结构的变更都必须通过迁移来完成。**
+
+### 常用命令
+
+```bash
+# 应用所有迁移
+alembic upgrade head
+
+# 创建新迁移（自动检测模型变化）
+alembic revision --autogenerate -m "描述你的变更"
+
+# 回滚一个版本
+alembic downgrade -1
+
+# 查看当前版本
+alembic current
+
+# 查看迁移历史
+alembic history
+```
+
+### 详细文档
+
+完整的数据库迁移指南请参考：[MIGRATIONS.md](./MIGRATIONS.md)
 
