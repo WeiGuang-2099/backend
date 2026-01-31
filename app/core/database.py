@@ -24,9 +24,18 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def get_db():
-    """获取数据库会话"""
+    """获取数据库会话（用于FastAPI依赖注入）"""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+
+def get_db_session() -> Session:
+    """
+    获取数据库会话（用于Service层）
+
+    注意：调用方需要负责关闭会话
+    """
+    return SessionLocal()

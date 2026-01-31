@@ -8,14 +8,13 @@ Description: User API routes - 用户API路由层
 
 该层只负责处理HTTP请求和响应，所有业务逻辑由Service层处理。
 遵循三层架构原则：API层 -> Service层 -> Repository层
+API层不感知数据库，数据库会话由Service层内部管理。
 
 Copyright (c) 2026 by yuheng li, All Rights Reserved.
 """
-from fastapi import APIRouter, HTTPException, Depends, status, Body
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException, Depends, Body
 from typing import List
 from app.schemas.user import UserResponse, UserUpdate, UserIdRequest, UserUpdateRequest
-from app.core.database import get_db
 from app.core.auth import get_current_user
 from app.services.user_service import user_service
 
@@ -24,31 +23,29 @@ router = APIRouter()
 
 @router.post("/list", response_model=List[UserResponse])
 async def get_users(
-    current_user: UserResponse = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: UserResponse = Depends(get_current_user)
 ):
     """
     获取所有用户（需要认证）
-    
+
     使用POST方式以便后续RPC调用兼容
     API层只负责请求处理，业务逻辑由Service层处理
     """
-    return user_service.get_all_users(db)
+    return user_service.get_all_users()
 
 
 @router.post("/get", response_model=UserResponse)
 async def get_user(
     request: UserIdRequest = Body(...),
-    current_user: UserResponse = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: UserResponse = Depends(get_current_user)
 ):
     """
     根据ID获取用户（需要认证）
-    
+
     使用POST方式以便后续RPC调用兼容
     API层只负责请求处理和异常转换，业务逻辑由Service层处理
     """
-    user = user_service.get_user_by_id(db, request.user_id)
+    user = user_service.get_user_by_id(request.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -57,12 +54,11 @@ async def get_user(
 @router.post("/update", response_model=UserResponse)
 async def update_user(
     request: UserUpdateRequest = Body(...),
-    current_user: UserResponse = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: UserResponse = Depends(get_current_user)
 ):
     """
     更新用户（需要认证）
-    
+
     使用POST方式以便后续RPC调用兼容
     API层只负责请求处理和异常转换，业务逻辑（如密码加密、重复检查）由Service层处理
     """
@@ -73,9 +69,9 @@ async def update_user(
             email=request.email,
             password=request.password
         )
-        
+
         # 调用Service层处理业务逻辑
-        updated_user = user_service.update_user(db, request.user_id, user_update)
+        updated_user = user_service.update_user(request.user_id, user_update)
         if not updated_user:
             raise HTTPException(status_code=404, detail="User not found")
         return updated_user
@@ -87,16 +83,15 @@ async def update_user(
 @router.post("/delete")
 async def delete_user(
     request: UserIdRequest = Body(...),
-    current_user: UserResponse = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: UserResponse = Depends(get_current_user)
 ):
     """
     删除用户（需要认证）
-    
+
     使用POST方式以便后续RPC调用兼容
     API层只负责请求处理和异常转换，业务逻辑由Service层处理
     """
-    success = user_service.delete_user(db, request.user_id)
+    success = user_service.delete_user(request.user_id)
     if not success:
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": "User deleted successfully"}
