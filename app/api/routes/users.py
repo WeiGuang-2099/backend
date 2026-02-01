@@ -1,71 +1,97 @@
-from fastapi import APIRouter, HTTPException
+"""
+Author: yuheng li a1793138
+Date: 2026-01-27
+LastEditors: yuheng
+LastEditTime: 2026-01-27
+FilePath: /backend/app/api/routes/users.py
+Description: User API routes - 用户API路由层
+
+该层只负责处理HTTP请求和响应，所有业务逻辑由Service层处理。
+遵循三层架构原则：API层 -> Service层 -> Repository层
+API层不感知数据库，数据库会话由Service层内部管理。
+
+Copyright (c) 2026 by yuheng li, All Rights Reserved.
+"""
+from fastapi import APIRouter, HTTPException, Depends, Body
 from typing import List
-from app.schemas.user import UserResponse, UserCreate, UserUpdate, UserLogin
-from app.core.database import db
+from app.schemas.user import UserResponse, UserUpdate, UserIdRequest, UserUpdateRequest
+from app.core.auth import get_current_user
+from app.services.user_service import user_service
 
 router = APIRouter()
 
 
-@router.get("/", response_model=List[UserResponse])
-async def get_users():
-    """获取所有用户"""
-    return db.get_all_users()
+@router.post("/list", response_model=List[UserResponse])
+async def get_users(
+    current_user: UserResponse = Depends(get_current_user)
+):
+    """
+    获取所有用户（需要认证）
+
+    使用POST方式以便后续RPC调用兼容
+    API层只负责请求处理，业务逻辑由Service层处理
+    """
+    return user_service.get_all_users()
 
 
-@router.get("/{user_id}", response_model=UserResponse)
-async def get_user(user_id: int):
-    """根据ID获取用户"""
-    user = db.get_user(user_id)
+@router.post("/get", response_model=UserResponse)
+async def get_user(
+    request: UserIdRequest = Body(...),
+    current_user: UserResponse = Depends(get_current_user)
+):
+    """
+    根据ID获取用户（需要认证）
+
+    使用POST方式以便后续RPC调用兼容
+    API层只负责请求处理和异常转换，业务逻辑由Service层处理
+    """
+    user = user_service.get_user_by_id(request.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
 
-@router.post("/", response_model=UserResponse)
-async def create_user(user: UserCreate):
-    """创建新用户"""
-    # 检查用户名是否已存在
-    existing_users = db.get_all_users()
-    for existing_user in existing_users:
-        if existing_user.username == user.username:
-            raise HTTPException(status_code=400, detail="Username already exists")
-        if existing_user.email == user.email:
-            raise HTTPException(status_code=400, detail="Email already exists")
-    
-    new_user = db.create_user(user)
-    return new_user
+@router.post("/update", response_model=UserResponse)
+async def update_user(
+    request: UserUpdateRequest = Body(...),
+    current_user: UserResponse = Depends(get_current_user)
+):
+    """
+    更新用户（需要认证）
+
+    使用POST方式以便后续RPC调用兼容
+    API层只负责请求处理和异常转换，业务逻辑（如密码加密、重复检查）由Service层处理
+    """
+    try:
+        # 构建 UserUpdate 对象
+        user_update = UserUpdate(
+            username=request.username,
+            email=request.email,
+            password=request.password
+        )
+
+        # 调用Service层处理业务逻辑
+        updated_user = user_service.update_user(request.user_id, user_update)
+        if not updated_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return updated_user
+    except ValueError as e:
+        # 将业务逻辑异常转换为HTTP异常
+        raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.put("/{user_id}", response_model=UserResponse)
-async def update_user(user_id: int, user: UserUpdate):
-    """更新用户"""
-    updated_user = db.update_user(user_id, user)
-    if not updated_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return updated_user
+@router.post("/delete")
+async def delete_user(
+    request: UserIdRequest = Body(...),
+    current_user: UserResponse = Depends(get_current_user)
+):
+    """
+    删除用户（需要认证）
 
-
-@router.delete("/{user_id}")
-async def delete_user(user_id: int):
-    """删除用户"""
-    success = db.delete_user(user_id)
+    使用POST方式以便后续RPC调用兼容
+    API层只负责请求处理和异常转换，业务逻辑由Service层处理
+    """
+    success = user_service.delete_user(request.user_id)
     if not success:
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": "User deleted successfully"}
-
-
-@router.post("/login")
-async def login(user_login: UserLogin):
-    """用户登录（简单示例）"""
-    users = db.get_all_users()
-    for user in users:
-        if user.username == user_login.username and user.password == user_login.password:
-            return {
-                "message": "Login successful",
-                "user": {
-                    "id": user.id,
-                    "username": user.username,
-                    "email": user.email
-                }
-            }
-    raise HTTPException(status_code=401, detail="Invalid username or password")
