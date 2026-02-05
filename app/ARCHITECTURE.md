@@ -11,15 +11,16 @@
 │  - 处理HTTP请求和响应                    │
 │  - 参数验证和异常转换                    │
 │  - 不包含业务逻辑                        │
+│  - 不感知数据库                          │
 └──────────────┬──────────────────────────┘
-               │ 依赖
+               │ 只依赖 Service
                ↓
 ┌─────────────────────────────────────────┐
 │     Service Layer (业务逻辑层)           │
 │  app/services/                          │
 │  - 处理业务逻辑                          │
 │  - 数据验证和转换                        │
-│  - 不直接操作数据库                      │
+│  - 自己管理数据库会话                    │
 └──────────────┬──────────────────────────┘
                │ 依赖
                ↓
@@ -42,18 +43,17 @@
 - 请求参数验证（通过Pydantic模型）
 - 调用Service层方法
 - 将Service层异常转换为HTTP异常
-- **不应该**: 包含业务逻辑或直接访问数据库
+- **不应该**: 包含业务逻辑、直接访问数据库、或依赖数据库会话
 
 **示例** (`app/api/routes/users.py`):
 ```python
 @router.post("/get", response_model=UserResponse)
 async def get_user(
     request: UserIdRequest = Body(...),
-    current_user: UserResponse = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: UserResponse = Depends(get_current_user)
 ):
-    """API层只负责请求处理"""
-    user = user_service.get_user_by_id(db, request.user_id)
+    """API层只负责请求处理，不感知数据库"""
+    user = user_service.get_user_by_id(request.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -65,28 +65,33 @@ async def get_user(
 **职责**:
 - 实现业务逻辑
 - 数据验证和转换
+- **自己获取和管理数据库会话**（通过 `get_db_session()`）
 - 调用Repository层进行数据操作
 - 处理复杂的业务流程
 - 抛出业务异常（如`ValueError`）
-- **不应该**: 直接操作数据库或处理HTTP请求
+- **不应该**: 处理HTTP请求
 
 **示例** (`app/services/user_service.py`):
 ```python
 @staticmethod
-def create_user(db: Session, user_create: UserCreate) -> UserResponse:
-    """Service层处理业务逻辑"""
-    # 业务逻辑：检查用户名是否已存在
-    existing_user = user_repo.get_user_by_username(db, user_create.username)
-    if existing_user:
-        raise ValueError(f"用户名 '{user_create.username}' 已存在")
-    
-    # 业务逻辑：密码加密
-    hashed_password = get_password_hash(user_create.password)
-    user_create.password = hashed_password
-    
-    # 调用Repository层
-    created_user = user_repo.create_user(db, user_create)
-    return UserResponse(...)
+def create_user(user_create: UserCreate) -> UserResponse:
+    """Service层处理业务逻辑，自己管理数据库会话"""
+    db = get_db_session()
+    try:
+        # 业务逻辑：检查用户名是否已存在
+        existing_user = user_repo.get_user_by_username(db, user_create.username)
+        if existing_user:
+            raise ValueError(f"用户名 '{user_create.username}' 已存在")
+
+        # 业务逻辑：密码加密
+        hashed_password = get_password_hash(user_create.password)
+        user_create.password = hashed_password
+
+        # 调用Repository层
+        created_user = user_repo.create_user(db, user_create)
+        return UserResponse(...)
+    finally:
+        db.close()
 ```
 
 ### 3. Repository Layer (数据访问层)
@@ -121,12 +126,12 @@ def create_user(db: Session, user: UserCreate) -> User:
 
 ### 请求流程（Request Flow）
 ```
-HTTP Request 
+HTTP Request
     ↓
-API Layer (routes)
-    ↓ 调用
-Service Layer (services)
-    ↓ 调用
+API Layer (routes) ─── 不感知数据库
+    ↓ 调用 service 方法
+Service Layer (services) ─── 获取 db session
+    ↓ 调用 repo 方法，传递 db
 Repository Layer (repositories)
     ↓ 访问
 Database
@@ -138,7 +143,7 @@ Database
     ↓ 返回数据
 Repository Layer (返回 Model 对象)
     ↓ 返回数据
-Service Layer (转换为 Schema 对象)
+Service Layer (转换为 Schema 对象，关闭 db session)
     ↓ 返回数据
 API Layer (返回 HTTP Response)
     ↓
@@ -156,11 +161,12 @@ HTTP Response
 
 ## 依赖规则
 
-- API层 **只能** 依赖 Service层
-- Service层 **只能** 依赖 Repository层
+- API层 **只能** 依赖 Service层，**不能** 依赖数据库（db session）
+- Service层 **只能** 依赖 Repository层和数据库会话工厂（`get_db_session`）
 - Repository层 **只能** 依赖 Model层（数据库模型）
 - **禁止**跨层依赖（如API层直接调用Repository层）
 - **禁止**反向依赖（如Repository层依赖Service层）
+- **禁止** API层感知数据库（不能有 `db: Session = Depends(get_db)`）
 
 ## 文件组织
 
@@ -184,32 +190,36 @@ app/
 
 以"创建用户"为例：
 
-1. **API层** (`routes/auth.py`):
+1. **API层** (`routes/auth.py`) - 不感知数据库:
    ```python
    @router.post("/register")
-   async def register(user: UserCreate, db: Session = Depends(get_db)):
+   async def register(user: UserCreate):
        try:
-           new_user = user_service.register_user(db, user)
+           new_user = user_service.register_user(user)
            # ... 生成token和返回
        except ValueError as e:
            raise HTTPException(status_code=400, detail=str(e))
    ```
 
-2. **Service层** (`services/user_service.py`):
+2. **Service层** (`services/user_service.py`) - 自己管理数据库会话:
    ```python
-   def register_user(db: Session, user_create: UserCreate):
-       # 检查用户名是否存在（业务逻辑）
-       if user_repo.get_user_by_username(db, user_create.username):
-           raise ValueError("用户名已存在")
-       
-       # 密码加密（业务逻辑）
-       user_create.password = get_password_hash(user_create.password)
-       
-       # 调用Repository层
-       return user_repo.create_user(db, user_create)
+   def register_user(user_create: UserCreate):
+       db = get_db_session()
+       try:
+           # 检查用户名是否存在（业务逻辑）
+           if user_repo.get_user_by_username(db, user_create.username):
+               raise ValueError("用户名已存在")
+
+           # 密码加密（业务逻辑）
+           user_create.password = get_password_hash(user_create.password)
+
+           # 调用Repository层
+           return user_repo.create_user(db, user_create)
+       finally:
+           db.close()
    ```
 
-3. **Repository层** (`user_repo/user.py`):
+3. **Repository层** (`user_repo/user.py`) - 只负责数据库操作:
    ```python
    def create_user(db: Session, user: UserCreate):
        db_user = User(**user.dict())
@@ -222,11 +232,12 @@ app/
 ## 最佳实践
 
 1. **保持层次清晰**: 不要在API层写业务逻辑
-2. **使用依赖注入**: 通过FastAPI的`Depends`机制注入依赖
-3. **统一异常处理**: Service层抛出业务异常，API层转换为HTTP异常
-4. **使用Schema进行验证**: 利用Pydantic模型进行数据验证
-5. **避免循环依赖**: 遵循单向依赖原则
-6. **编写清晰的注释**: 说明每层的职责和方法的用途
+2. **API层不感知数据库**: API层不应该有 `db: Session` 参数
+3. **Service层管理数据库会话**: 使用 `get_db_session()` 获取会话，用 `try/finally` 确保关闭
+4. **统一异常处理**: Service层抛出业务异常，API层转换为HTTP异常
+5. **使用Schema进行验证**: 利用Pydantic模型进行数据验证
+6. **避免循环依赖**: 遵循单向依赖原则
+7. **编写清晰的注释**: 说明每层的职责和方法的用途
 
 ## 未来扩展
 

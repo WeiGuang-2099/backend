@@ -33,7 +33,17 @@ class UserService:
         db = get_db_session()
         try:
             users = user_repo.get_all_users(db)
-            return [UserResponse(id=u.id, username=u.username, email=u.email) for u in users]
+            return [
+                UserResponse(
+                    id=u.id,
+                    username=u.username,
+                    email=u.email,
+                    is_active=True,
+                    is_superuser=False,
+                    created_at="",
+                    updated_at=""
+                ) for u in users
+            ]
         finally:
             db.close()
     
@@ -53,7 +63,15 @@ class UserService:
             user = user_repo.get_user_by_id(db, user_id)
             if not user:
                 return None
-            return UserResponse(id=user.id, username=user.username, email=user.email)
+            return UserResponse(
+                id=user.id,
+                username=user.username,
+                email=user.email,
+                is_active=True,
+                is_superuser=False,
+                created_at="",
+                updated_at=""
+            )
         finally:
             db.close()
     
@@ -92,7 +110,11 @@ class UserService:
             return UserResponse(
                 id=created_user.id,
                 username=created_user.username,
-                email=created_user.email
+                email=created_user.email,
+                is_active=True,
+                is_superuser=False,
+                created_at="",
+                updated_at=""
             )
         finally:
             db.close()
@@ -143,7 +165,11 @@ class UserService:
             return UserResponse(
                 id=updated_user.id,
                 username=updated_user.username,
-                email=updated_user.email
+                email=updated_user.email,
+                is_active=True,
+                is_superuser=False,
+                created_at="",
+                updated_at=""
             )
         finally:
             db.close()
@@ -206,7 +232,15 @@ class UserService:
             if not verify_password(password, user.password):
                 return None
 
-            return UserResponse(id=user.id, username=user.username, email=user.email)
+            return UserResponse(
+                id=user.id,
+                username=user.username,
+                email=user.email,
+                is_active=True,
+                is_superuser=False,
+                created_at="",
+                updated_at=""
+            )
         finally:
             db.close()
 

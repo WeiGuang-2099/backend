@@ -32,7 +32,8 @@ def create_user(db: Session, user: UserCreate) -> User:
     db_user = User(
         username=user.username,
         email=user.email,
-        password=user.password  # 应该是已经加密的密码
+        password=user.password,  # 应该是已经加密的密码
+        full_name=user.full_name  # 添加 full_name 字段
     )
     db.add(db_user)
     db.commit()
