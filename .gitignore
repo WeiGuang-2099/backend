@@ -175,7 +175,6 @@ logs/
 
 # FastAPI specific
 .pytest_cache/
-.ruff_cache/
 
 # Backup files
 *.bak
@@ -206,3 +205,36 @@ data/
 MIGRATIONS.md
 ALEMBIC_SETUP.md
 ARCHITECTURE.md
+
+# GCP credentials (NEVER commit)
+gcp-key.json
+*.key.json
+service-account-*.json
+
+# Environment files for deployment
+.env.cloudrun
+.env.production
+.env.staging
+
+# Deployment scripts output
+deploy-*.log
+*.deployment.yaml
+
+# Claude Code configuration
+.claude/
+
+# Ruff
+.ruff_cache/
+
+# Black
+.black/
+
+# isort
+.isort.cfg
+
+# pyright
+.pyrightconfig.pkl
+
+# Local development files
+*.local
+*.local.*

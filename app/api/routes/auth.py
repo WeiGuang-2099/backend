@@ -13,7 +13,7 @@ API层不感知数据库，数据库会话由Service层内部管理。
 Copyright (c) 2026 by yuheng li, All Rights Reserved.
 """
 from fastapi import APIRouter, HTTPException, status, Depends
-from app.schemas.user import UserLogin, UserCreate, UserResponse, TokenResponse
+from app.schemas.user import UserLogin, UserRegister, UserCreate, UserResponse, TokenResponse, UserWithToken
 from app.core.security import create_access_token
 from app.core.auth import get_current_user
 from app.services.user_service import user_service
@@ -21,8 +21,8 @@ from app.services.user_service import user_service
 router = APIRouter()
 
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(user: UserCreate):
+@router.post("/register", response_model=UserWithToken, status_code=status.HTTP_201_CREATED)
+async def register(user: UserRegister):
     """
     用户注册
 
@@ -33,7 +33,7 @@ async def register(user: UserCreate):
         user: 用户注册信息
 
     Returns:
-        TokenResponse: 包含 access_token 和用户信息
+        UserWithToken: 包含 access_token 和用户信息
 
     Raises:
         HTTPException: 用户名或邮箱已存在时返回 400
@@ -44,13 +44,21 @@ async def register(user: UserCreate):
 
         # API层只负责生成Token和返回响应
         access_token = create_access_token(
-            data={"sub": new_user.id, "username": new_user.username}
+            data={"sub": str(new_user.id), "username": new_user.username}
         )
 
-        return TokenResponse(
+        # 返回 UserWithToken 格式
+        return UserWithToken(
             access_token=access_token,
             token_type="bearer",
-            user=new_user
+            id=new_user.id,
+            username=new_user.username,
+            email=new_user.email,
+            full_name=new_user.full_name,
+            is_active=new_user.is_active,
+            is_superuser=new_user.is_superuser,
+            created_at=new_user.created_at,
+            updated_at=new_user.updated_at
         )
     except ValueError as e:
         # 将业务逻辑异常转换为HTTP异常
@@ -60,7 +68,7 @@ async def register(user: UserCreate):
         )
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=UserWithToken)
 async def login(user_login: UserLogin):
     """
     用户登录
@@ -72,7 +80,7 @@ async def login(user_login: UserLogin):
         user_login: 登录凭证（用户名和密码）
 
     Returns:
-        TokenResponse: 包含 access_token 和用户信息
+        UserWithToken: 包含 access_token 和用户信息
 
     Raises:
         HTTPException: 凭证无效时返回 401
@@ -88,13 +96,20 @@ async def login(user_login: UserLogin):
 
     # API层只负责生成Token和返回响应
     access_token = create_access_token(
-        data={"sub": user.id, "username": user.username}
+        data={"sub": str(user.id), "username": user.username}
     )
 
-    return TokenResponse(
+    return UserWithToken(
         access_token=access_token,
         token_type="bearer",
-        user=user
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        full_name=user.full_name,
+        is_active=user.is_active,
+        is_superuser=user.is_superuser,
+        created_at=user.created_at,
+        updated_at=user.updated_at
     )
 
 

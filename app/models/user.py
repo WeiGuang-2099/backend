@@ -26,4 +26,5 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True, comment="用户唯一标识ID")
     username = Column(String(50), unique=True, index=True, nullable=False, comment="用户名，唯一且不能为空")
     email = Column(String(100), unique=True, index=True, nullable=False, comment="用户邮箱地址，唯一且不能为空")
+    full_name = Column(String(100), nullable=True, comment="用户全名")
     password = Column(String(255), nullable=False, comment="用户密码（bcrypt哈希加密后存储）")

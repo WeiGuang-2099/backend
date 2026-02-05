@@ -12,15 +12,20 @@ from alembic import context
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # 导入项目配置和模型
-from app.core.config import settings
 from app.models.user import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
-# 从项目配置中获取数据库 URL
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# 直接从环境变量获取数据库 URL（避免模块加载顺序问题）
+# 如果环境变量不存在，则从 settings 读取
+database_url = os.getenv("DATABASE_URL")
+if not database_url:
+    from app.core.config import settings
+    database_url = settings.DATABASE_URL
+
+config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
