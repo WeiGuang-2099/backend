@@ -4,7 +4,8 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nRefactor: remove direct db dependency from API layer\n\nMove database session handling from API routes to service layer\nfor better separation of concerns in three-tier architecture.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git push:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git remote set-url:*)"
     ]
   }
 }

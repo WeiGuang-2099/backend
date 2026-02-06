@@ -1,10 +1,17 @@
+# ============================================
+# Python
+# ============================================
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
+*.pyo
 
 # C extensions
 *.so
+*.pyd
 
 # Distribution / packaging
 .Python
@@ -30,10 +37,14 @@ MANIFEST
 # PyInstaller
 *.manifest
 *.spec
+*.spec.d
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+# cx_Freeze
+build/
+!*/build/
+
+# PyOxidizer
+pyo3build/
 
 # Unit test / coverage reports
 htmlcov/
@@ -48,17 +59,54 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
-.pytest_cache
+test-results/
+*.test
 
 # Translations
 *.mo
 *.pot
+*.po~
+
+# Locales
+locales/
+i18n/
+
+# ============================================
+# Python Package Managers
+# ============================================
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+poetry-core.lock
+
+# pdm
+.pdm.toml
+__pypackages__/
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+__pypackages__/
+
+# uv (modern Python package manager)
+.uv/
+uv.lock
+
+# Rye (modern Python toolchain)
+.rye/
+
+# ============================================
+# Frameworks
+# ============================================
 
 # Django stuff:
 *.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+/media/
+/static/staticfiles/
 
 # Flask stuff:
 instance/
@@ -67,78 +115,59 @@ instance/
 # Scrapy stuff:
 .scrapy
 
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# pipenv
-Pipfile.lock
-
-# poetry
-poetry.lock
-
-# pdm
-.pdm.toml
-__pypackages__/
-
-# PEP 582
-__pypackages__/
-
 # Celery stuff
 celerybeat-schedule
 celerybeat.pid
+celerybeat-scheduledb
+celery/
+.celery/
 
-# SageMath parsed files
-*.sage.py
+# ============================================
+# Database
+# ============================================
 
-# Environments
-.env
-.env.local
-.env.*.local
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
 
-# Spyder project settings
-.spyderproject
-.spyproject
+# Alembic
+alembic/versions/*.pyc
+alembic/__pycache__/
 
-# Rope project settings
-.ropeproject
+# MySQL data (if using local volumes)
+mysql_data/
+data/
+pgdata/
+mongodb_data/
+redis_data/
 
-# mkdocs documentation
-/site
+# ============================================
+# Documentation
+# ============================================
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+# Sphinx
+docs/_build/
+docs/_static/
+docs/_templates/
 
-# Pyre type checker
-.pyre/
+# MkDocs
+site/
 
-# pytype static type analyzer
-.pytype/
+# Local docs (not tracked)
+local_docs/
+docs/
+notes/
+todo/
+NOTES.md
+TODO.md
+ARCHITECTURE.md
 
-# Cython debug symbols
-cython_debug/
+# ============================================
+# IDEs & Editors
+# ============================================
 
-# IDEs
+# General
 .vscode/
 .idea/
 .cursor/
@@ -148,68 +177,164 @@ cython_debug/
 .project
 .pydevproject
 .settings/
+*.sublime-*
+.vs/
+.history/
 
-# OS
+# JetBrains IDEs (specific)
+*.iml
+*.iws
+*.ipr
+
+# Spyder project settings
+.spyderproject
+.spyproject
+.spyder
+
+# Rope project settings
+.ropeproject
+
+# ============================================
+# Jupyter / IPython
+# ============================================
+
+.ipynb_checkpoints/
+*.ipynb
+profile_default/
+ipython_config.py
+
+# ============================================
+# Type Checkers & Linters
+# ============================================
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+mypy.ini
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Ruff
+.ruff_cache/
+ruff.toml
+
+# Black
+.black/
+.black_cache
+
+# isort
+.isort.cfg
+
+# pyright
+.pyrightconfig.pkl
+
+# Pylint
+.pylintrc
+
+# Yapf
+.yapfignore
+
+# ============================================
+# OS Specific
+# ============================================
+
+# macOS
 .DS_Store
 .DS_Store?
 ._*
+.AppleDouble
+.LSOverride
+.DocumentRevisions-V100
+.fseventsd
 .Spotlight-V100
+.TemporaryItems
 .Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Desktop.ini
 ehthumbs.db
 Thumbs.db
-Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
-*.db-journal
+# Linux
+.directory
+.Trash-*
+.nfs*
 
-# Alembic migrations (optional - comment out if you want to track them)
-# alembic/versions/*.py
+# ============================================
+# Logs & Runtime
+# ============================================
 
-# Logs
 logs/
 *.log
 *.log.*
+log/
+logs/*.log
+*.log.gz
+*.log.zip
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
-# FastAPI specific
-.pytest_cache/
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# Backup files
-*.bak
-*.backup
-*.old
-*.orig
-
-# Temporary files
-tmp/
-temp/
-*.tmp
-
-# Local testing
-test.db
-test_*.db
-local_test_data/
-
+# ============================================
 # Docker
+# ============================================
+
 .dockerignore
 docker-compose.override.yml
-*.pid
+docker-compose.*.yml
+!docker-compose.yml
 
-# MySQL data (if using local volumes)
-mysql_data/
-data/
+# ============================================
+# Environments & Secrets (NEVER commit)
+# ============================================
 
-# Local docs (not tracked)
-MIGRATIONS.md
-ALEMBIC_SETUP.md
-ARCHITECTURE.md
+# Local environment overrides (keep .env.example)
+.env
+.env.*
+!.env.example
+.env.local
+.env.*.local
 
-# GCP credentials (NEVER commit)
+# GCP credentials
 gcp-key.json
 *.key.json
 service-account-*.json
+*gcp*.json
+*service-account*.json
+
+# Secrets
+*.pem
+*.key
+*.cert
+*.crt
+secrets/
+credentials/
+*.credentials.json
+
+# ============================================
+# Deployment & Infrastructure
+# ============================================
 
 # Environment files for deployment
 .env.cloudrun
@@ -220,21 +345,95 @@ service-account-*.json
 deploy-*.log
 *.deployment.yaml
 
+# Terraform
+terraform/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# ============================================
+# Virtual Environments
+# ============================================
+
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ============================================
+# Misc Tools
+# ============================================
+
 # Claude Code configuration
 .claude/
 
-# Ruff
-.ruff_cache/
+# AI tools
+.aider/
+.copilot/
+.cursorrules
 
-# Black
-.black/
+# pyenv
+.python-version
 
-# isort
-.isort.cfg
+# SageMath parsed files
+*.sage.py
 
-# pyright
-.pyrightconfig.pkl
+# PyQt
+*.ui
+*.qrc
 
-# Local development files
-*.local
-*.local.*
+# Cython
+cython_debug/
+*.pyx.c
+*.pxd
+
+# Nuitka
+*.build/
+*.dist/
+*.onefile-build/
+
+# GitHub Actions - local testing
+.github/workflows/*.local.yml
+
+# Pre-commit
+.pre-commit-config.yaml.local
+
+# ============================================
+# Backup & Temporary Files
+# ============================================
+
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+*.patch
+*.diff
+tmp/
+temp/
+*.tmp
+.cache/
+*.cache
+
+# ============================================
+# Compiled Files (non-Python)
+# ============================================
+
+*.com
+*.class
+*.dll
+*.exe
+*.o
+
+# Package files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip

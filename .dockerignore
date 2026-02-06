@@ -1,12 +1,17 @@
+# ============================================
 # Git
+# ============================================
 .git
 .gitignore
 
+# ============================================
 # Python
+# ============================================
 __pycache__
 *.py[cod]
 *$py.class
 *.so
+*.pyd
 .Python
 *.egg-info
 dist
@@ -14,53 +19,216 @@ build
 .eggs
 .pytest_cache
 .coverage
+.coverage.*
 htmlcov
+.tox/
+.nox/
+.hypothesis/
 
+# ============================================
 # Virtual Environment
+# ============================================
 venv
 env
 ENV
 .venv
+env.bak/
+venv.bak/
 
-# IDE
+# ============================================
+# IDE & Editors
+# ============================================
 .vscode
 .idea
+.cursor
 *.swp
 *.swo
 *~
+.spyderproject
+.spyproject
+.sublime-*
+.vs/
+.history/
 
+# ============================================
 # Environment files (will be set via Cloud Run config)
+# ============================================
 .env
 .env.*
 !.env.example
+.env.local
+.env.*.local
 
+# ============================================
 # Database files
+# ============================================
 *.db
 *.sqlite
 *.sqlite3
+*.db-journal
+mysql_data/
+data/
+pgdata/
+mongodb_data/
 
+# ============================================
 # Logs
+# ============================================
 *.log
-logs
+*.log.*
+logs/
+log/
+*.log.gz
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
+# ============================================
 # OS
+# ============================================
 .DS_Store
+.DS_Store?
+._*
+.AppleDouble
+.LSOverride
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+Desktop.ini
+ehthumbs.db
 Thumbs.db
+$RECYCLE.BIN/
 
+# ============================================
 # Docker
+# ============================================
 Dockerfile
 .dockerignore
-docker-compose.yml
+docker-compose.override.yml
+docker-compose.*.yml
+!docker-compose.yml
 
-# Claude
+# ============================================
+# AI Tools & Claude
+# ============================================
 .claude
+.aider
+.copilot
+.cursorrules
 
-# Documentation
+# ============================================
+# Documentation (local)
+# ============================================
 README.md
+local_docs/
+docs/
+notes/
+todo/
+NOTES.md
+TODO.md
+ARCHITECTURE.md
 MIGRATIONS.md
 ALEMBIC_SETUP.md
-docs
+CLOUD_RUN_DEPLOYMENT.md
+CLOUD_RUN_DEPLOYMENT_GUIDE.md
 
-# Scripts
+# ============================================
+# Scripts (local development)
+# ============================================
 init_sample_users.py
 deploy.sh
+
+# ============================================
+# Testing & Coverage
+# ============================================
+test-results/
+*.test
+htmlcov/
+coverage.xml
+*.cover
+
+# ============================================
+# Type Checkers & Linters
+# ============================================
+.mypy_cache/
+.dmypy.json
+.pyre/
+.pytype/
+.ruff_cache/
+.black/
+
+# ============================================
+# Deployment & Infrastructure
+# ============================================
+terraform/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+deploy-*.log
+*.deployment.yaml
+
+# ============================================
+# Secrets (NEVER commit)
+# ============================================
+*.pem
+*.key
+*.cert
+*.crt
+secrets/
+credentials/
+*.credentials.json
+gcp-key.json
+*.key.json
+service-account-*.json
+*gcp*.json
+*service-account*.json
+
+# ============================================
+# Temporary & Cache Files
+# ============================================
+tmp/
+temp/
+*.tmp
+.cache/
+*.cache
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+*.patch
+*.diff
+
+# ============================================
+# Package Files
+# ============================================
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# ============================================
+# GitHub Actions (local)
+# ============================================
+.github/workflows/*.local.yml
+.pre-commit-config.yaml.local
+
+# ============================================
+# Misc Tools
+# ============================================
+.python-version
+.uv/
+uv.lock
+.rye/
+celerybeat-schedule
+celerybeat.pid
+.celery/
