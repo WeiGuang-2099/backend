@@ -70,10 +70,14 @@ jobs:
             --region=${{ env.REGION }} \
             --project=${{ env.PROJECT_ID }} \
             --allow-unauthenticated \
-            --add-cloudsql-instances=${{ secrets.CLOUD_SQL_CONNECTION }} \
+            --add-cloudsql-instances=${{ secrets.CLOUDSQL_CONNECTION_NAME }} \
             --set-env-vars="DATABASE_URL=${{ secrets.DATABASE_URL }}" \
             --set-env-vars="SECRET_KEY=${{ secrets.SECRET_KEY }}" \
             --set-env-vars="ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}" \
+            --set-env-vars="CLOUDSQL_CONNECTION_NAME=${{ secrets.CLOUDSQL_CONNECTION_NAME }}" \
+            --set-env-vars="DB_USER=${{ secrets.DB_USER }}" \
+            --set-env-vars="DB_PASSWORD=${{ secrets.DB_PASSWORD }}" \
+            --set-env-vars="DB_NAME=${{ secrets.DB_NAME }}" \
             --memory=512Mi \
             --cpu=1 \
             --timeout=300 \

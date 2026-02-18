@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
@@ -45,6 +49,8 @@ async def debug():
         "DATABASE_URL_from_env": os.getenv("DATABASE_URL", "NOT_SET")[:50] + "...",
         "DATABASE_URL_from_get_db_url": db_url_preview,
         "K_SERVICE": os.getenv("K_SERVICE", "NOT_SET"),
+        "ALLOWED_ORIGINS_raw": os.getenv("ALLOWED_ORIGINS", "NOT_SET"),
+        "ALLOWED_ORIGINS_list": settings.allowed_origins_list,
     }
 
 

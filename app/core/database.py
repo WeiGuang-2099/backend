@@ -10,6 +10,7 @@ MySQL 数据库连接和操作
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
+import pymysql
 
 
 # 全局变量
@@ -32,6 +33,11 @@ def _get_database_url():
     )
 
 
+def _get_cloudsql_instance_name():
+    """获取 Cloud SQL 实例名称（用于 Cloud Run）"""
+    return os.getenv("CLOUDSQL_CONNECTION_NAME")
+
+
 def _init_db():
     """初始化数据库连接（每次调用都检查 URL 是否变化）"""
     global _engine, _SessionLocal, _last_database_url
@@ -46,12 +52,53 @@ def _init_db():
     # 如果 URL 发生变化，或者引擎未初始化，则重新创建
     if _engine is None or current_url != _last_database_url:
         print(f"[DEBUG] Creating new engine with URL: {current_url[:80]}...", file=sys.stderr)
-        _engine = create_engine(
-            current_url,
-            echo=True,
-            pool_pre_ping=True,
-            pool_recycle=3600,
-        )
+
+        # 检查是否使用 Cloud SQL
+        cloudsql_instance = _get_cloudsql_instance_name()
+
+        if cloudsql_instance:
+            # 使用 Cloud SQL 代理连接器
+            print(f"[DEBUG] Using Cloud SQL connector for instance: {cloudsql_instance}", file=sys.stderr)
+            try:
+                from google.cloud.sql.connector import Connector
+                import threading
+
+                connector = Connector()
+
+                def getconn() -> pymysql.connections.Connection:
+                    conn = connector.connect(
+                        cloudsql_instance,
+                        "pymysql",
+                        user=os.getenv("DB_USER", "jwt_user"),
+                        password=os.getenv("DB_PASSWORD"),
+                        db=os.getenv("DB_NAME", "jwt_auth_db")
+                    )
+                    return conn
+
+                _engine = create_engine(
+                    "mysql+pymysql://",
+                    creator=getconn,
+                    echo=True,
+                    pool_pre_ping=True,
+                    pool_recycle=3600,
+                )
+            except ImportError:
+                print("[WARNING] cloud-sql-python-connector not installed, falling back to direct connection", file=sys.stderr)
+                _engine = create_engine(
+                    current_url,
+                    echo=True,
+                    pool_pre_ping=True,
+                    pool_recycle=3600,
+                )
+        else:
+            # 使用直接连接
+            _engine = create_engine(
+                current_url,
+                echo=True,
+                pool_pre_ping=True,
+                pool_recycle=3600,
+            )
+
         _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
         _last_database_url = current_url
     else:
