@@ -9,9 +9,7 @@ Description: User model for database - 用户数据库模型定义
 Copyright (c) 2026 by yuheng li, All Rights Reserved.
 """
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
+from app.core.database import Base
 
 
 class User(Base):
