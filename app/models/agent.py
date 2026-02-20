@@ -8,10 +8,29 @@ Description: Agent model for database - 数字人数据库模型定义
 
 Copyright (c) 2026 by yuheng li, All Rights Reserved.
 """
-from sqlalchemy import Column, Integer, String, Text, Boolean, Float, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy import Column, Integer, String, Text, Boolean, Float, DateTime, ForeignKey, TypeDecorator
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
+import json
+
+
+class JSONText(TypeDecorator):
+    """
+    自定义 JSON 类型，兼容 MySQL，能够处理空字符串
+    """
+    impl = Text
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        return json.dumps(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None or value == '':
+            return None
+        return json.loads(value)
+
 
 Base = declarative_base()
 
@@ -33,7 +52,7 @@ class Agent(Base):
 
     # 类型与技能
     agent_type = Column(String(50), nullable=True, comment="数字人类型")
-    skills = Column(JSON, nullable=True, comment="技能列表")
+    skills = Column(JSONText, nullable=True, comment="技能列表")
     permission = Column(String(50), default='private', comment="权限设置")
 
     # 对话配置
@@ -42,8 +61,8 @@ class Agent(Base):
 
     # AI配置
     voice_id = Column(String(100), nullable=True, comment="语音ID")
-    voice_settings = Column(JSON, nullable=True, comment="语音设置")
-    appearance_settings = Column(JSON, nullable=True, comment="外观设置")
+    voice_settings = Column(JSONText, nullable=True, comment="语音设置")
+    appearance_settings = Column(JSONText, nullable=True, comment="外观设置")
     temperature = Column(Float, default=0.7, comment="AI温度参数")
     max_tokens = Column(Integer, default=2048, comment="最大token数")
     system_prompt = Column(Text, nullable=True, comment="系统提示词")
