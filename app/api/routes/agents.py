@@ -22,6 +22,18 @@ from app.services.agent_service import agent_service
 router = APIRouter()
 
 
+@router.post("", response_model=AgentResponse)
+@router.post("/", response_model=AgentResponse)
+async def create_agent_root(
+    agent_create: AgentCreate = Body(...),
+    current_user: UserResponse = Depends(get_current_user)
+):
+    """
+    创建数字人（RESTful 风格）- POST /api/v1/agents
+    """
+    return agent_service.create_agent(agent_create, current_user.id)
+
+
 @router.post("/list", response_model=List[AgentResponse])
 async def get_agents(
     request: AgentListRequest = Body(default=AgentListRequest()),
