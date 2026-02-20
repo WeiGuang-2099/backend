@@ -3,6 +3,7 @@ Agent CRUD 操作
 """
 from sqlalchemy.orm import Session
 from app.models.agent import Agent
+from app.models.user import User  # 导入 User 模型以确保外键关系正确
 from app.schemas.agent import AgentCreate, AgentUpdate
 from typing import Optional, List
 

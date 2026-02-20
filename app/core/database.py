@@ -9,8 +9,11 @@ MySQL 数据库连接和操作
 """
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, declarative_base
 import pymysql
+
+# 共享的 Base，所有模型都应该使用这个 Base
+Base = declarative_base()
 
 
 # 全局变量

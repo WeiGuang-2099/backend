@@ -7,7 +7,6 @@ Create Date: 2024-01-20 11:00:00.000000
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import JSON
 
 # revision identifiers, used by Alembic.
 revision = 'd3a7b8c4e5f6'
@@ -18,7 +17,7 @@ depends_on = None
 
 def upgrade() -> None:
     op.add_column('agents', sa.Column('agent_type', sa.String(50), nullable=True, comment="数字人类型"))
-    op.add_column('agents', sa.Column('skills', JSON, nullable=True, comment="技能列表"))
+    op.add_column('agents', sa.Column('skills', sa.Text(), nullable=True, comment="技能列表"))
     op.add_column('agents', sa.Column('permission', sa.String(50), default='private', comment="权限设置"))
 
 

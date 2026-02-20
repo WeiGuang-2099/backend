@@ -7,7 +7,6 @@ Create Date: 2024-01-20 10:00:00.000000
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import JSON
 
 # revision identifiers, used by Alembic.
 revision = 'c5f8a9b3d1e2'
@@ -25,8 +24,8 @@ def upgrade() -> None:
         sa.Column('description', sa.Text(), nullable=True, comment="数字人描述"),
         sa.Column('avatar_url', sa.String(500), nullable=True, comment="头像URL"),
         sa.Column('voice_id', sa.String(100), nullable=True, comment="语音ID"),
-        sa.Column('voice_settings', JSON, nullable=True, comment="语音设置"),
-        sa.Column('appearance_settings', JSON, nullable=True, comment="外观设置"),
+        sa.Column('voice_settings', sa.Text(), nullable=True, comment="语音设置"),
+        sa.Column('appearance_settings', sa.Text(), nullable=True, comment="外观设置"),
         sa.Column('is_active', sa.Boolean(), default=True, comment="是否激活"),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.now(), comment="创建时间"),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.now(), onupdate=sa.func.now(), comment="更新时间"),

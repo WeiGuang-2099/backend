@@ -9,8 +9,8 @@ Description: Agent model for database - 数字人数据库模型定义
 Copyright (c) 2026 by yuheng li, All Rights Reserved.
 """
 from sqlalchemy import Column, Integer, String, Text, Boolean, Float, DateTime, ForeignKey, TypeDecorator
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
+from app.core.database import Base
 import json
 
 
@@ -33,9 +33,6 @@ class JSONText(TypeDecorator):
             return json.loads(value)
         except (json.JSONDecodeError, TypeError):
             return None
-
-
-Base = declarative_base()
 
 
 class Agent(Base):
