@@ -1,21 +1,14 @@
-"""
-Author: yuheng li a1793138
-Date: 2026-01-20
-LastEditors: yuheng
-LastEditTime: 2026-01-20
-FilePath: /backend/app/services/agent_service.py
-Description: Agent service layer - 数字人业务逻辑层
-
-该层负责处理数字人相关的业务逻辑，自己管理数据库会话。
-遵循三层架构原则：API层 -> Service层 -> Repository层
-API层不感知数据库，Service层负责获取和管理数据库会话。
-
-Copyright (c) 2026 by yuheng li, All Rights Reserved.
-"""
-from typing import List, Optional
+"""Agent service layer - 数字人业务逻辑层"""
+from typing import List
 from app.schemas.agent import AgentCreate, AgentUpdate, AgentResponse
 from app.agent_repo import agent as agent_repo
 from app.core.database import get_db_session
+from app.core.exceptions import (
+    NotFoundException,
+    PermissionDeniedException,
+    ErrorCode,
+    BizException
+)
 
 
 class AgentService:
@@ -23,17 +16,7 @@ class AgentService:
 
     @staticmethod
     def get_agents_by_user_id(user_id: int, skip: int = 0, limit: int = 100) -> List[AgentResponse]:
-        """
-        获取用户的数字人列表
-
-        Args:
-            user_id: 用户ID
-            skip: 跳过数量
-            limit: 返回数量
-
-        Returns:
-            数字人响应列表
-        """
+        """获取用户的数字人列表"""
         db = get_db_session()
         try:
             agents = agent_repo.get_agents_by_user_id(db, user_id, skip, limit)
@@ -65,25 +48,20 @@ class AgentService:
             db.close()
 
     @staticmethod
-    def get_agent_by_id(agent_id: int, user_id: int) -> Optional[AgentResponse]:
-        """
-        根据ID获取数字人
+    def get_agent_by_id(agent_id: int, user_id: int) -> AgentResponse:
+        """根据ID获取数字人
 
-        Args:
-            agent_id: 数字人ID
-            user_id: 用户ID（用于权限校验）
-
-        Returns:
-            数字人响应对象，如果不存在或无权限返回None
+        Raises:
+            NotFoundException: 数字人不存在
+            PermissionDeniedException: 无权限访问
         """
         db = get_db_session()
         try:
             agent = agent_repo.get_agent_by_id(db, agent_id)
             if not agent:
-                return None
-            # 权限校验：只能访问自己的数字人
+                raise NotFoundException("Agent not found", ErrorCode.AGENT_NOT_FOUND)
             if agent.user_id != user_id:
-                return None
+                raise PermissionDeniedException("No permission to access this agent")
             return AgentResponse(
                 id=agent.id,
                 user_id=agent.user_id,
@@ -111,16 +89,7 @@ class AgentService:
 
     @staticmethod
     def create_agent(agent_create: AgentCreate, user_id: int) -> AgentResponse:
-        """
-        创建数字人
-
-        Args:
-            agent_create: 数字人创建数据
-            user_id: 用户ID
-
-        Returns:
-            创建的数字人响应对象
-        """
+        """创建数字人"""
         db = get_db_session()
         try:
             created_agent = agent_repo.create_agent(db, agent_create, user_id)
@@ -150,33 +119,24 @@ class AgentService:
             db.close()
 
     @staticmethod
-    def update_agent(agent_id: int, agent_update: AgentUpdate, user_id: int) -> Optional[AgentResponse]:
-        """
-        更新数字人
-
-        Args:
-            agent_id: 数字人ID
-            agent_update: 更新数据
-            user_id: 用户ID（用于权限校验）
-
-        Returns:
-            更新后的数字人响应对象，如果不存在或无权限返回None
+    def update_agent(agent_id: int, agent_update: AgentUpdate, user_id: int) -> AgentResponse:
+        """更新数字人
 
         Raises:
-            PermissionError: 无权限修改
+            NotFoundException: 数字人不存在
+            PermissionDeniedException: 无权限修改
         """
         db = get_db_session()
         try:
-            # 权限校验
             existing_agent = agent_repo.get_agent_by_id(db, agent_id)
             if not existing_agent:
-                return None
+                raise NotFoundException("Agent not found", ErrorCode.AGENT_NOT_FOUND)
             if existing_agent.user_id != user_id:
-                raise PermissionError("无权限修改此数字人")
+                raise PermissionDeniedException("No permission to update this agent")
 
             updated_agent = agent_repo.update_agent(db, agent_id, agent_update)
             if not updated_agent:
-                return None
+                raise BizException(ErrorCode.AGENT_UPDATE_FAILED, "Failed to update agent")
             return AgentResponse(
                 id=updated_agent.id,
                 user_id=updated_agent.user_id,
@@ -204,32 +164,26 @@ class AgentService:
 
     @staticmethod
     def delete_agent(agent_id: int, user_id: int) -> bool:
-        """
-        删除数字人
-
-        Args:
-            agent_id: 数字人ID
-            user_id: 用户ID（用于权限校验）
-
-        Returns:
-            是否删除成功
+        """删除数字人
 
         Raises:
-            PermissionError: 无权限删除
+            NotFoundException: 数字人不存在
+            PermissionDeniedException: 无权限删除
         """
         db = get_db_session()
         try:
-            # 权限校验
             existing_agent = agent_repo.get_agent_by_id(db, agent_id)
             if not existing_agent:
-                return False
+                raise NotFoundException("Agent not found", ErrorCode.AGENT_NOT_FOUND)
             if existing_agent.user_id != user_id:
-                raise PermissionError("无权限删除此数字人")
+                raise PermissionDeniedException("No permission to delete this agent")
 
-            return agent_repo.delete_agent(db, agent_id)
+            success = agent_repo.delete_agent(db, agent_id)
+            if not success:
+                raise BizException(ErrorCode.AGENT_DELETE_FAILED, "Failed to delete agent")
+            return True
         finally:
             db.close()
 
 
-# 创建单例实例供导入使用
 agent_service = AgentService()

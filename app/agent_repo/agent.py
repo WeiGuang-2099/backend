@@ -18,8 +18,8 @@ def get_agents_by_user_id(db: Session, user_id: int, skip: int = 0, limit: int =
     return db.query(Agent).filter(Agent.user_id == user_id).offset(skip).limit(limit).all()
 
 
-def get_all_agents(db: Session, skip: int = 0, limit: int = 100) -> List[Agent]:
-    """获取所有数字人"""
+def get_agents_page(db: Session, skip: int = 0, limit: int = 100) -> List[Agent]:
+    """分页获取数字人列表"""
     return db.query(Agent).offset(skip).limit(limit).all()
 
 
