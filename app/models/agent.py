@@ -16,7 +16,7 @@ import json
 
 class JSONText(TypeDecorator):
     """
-    自定义 JSON 类型，兼容 MySQL，能够处理空字符串
+    自定义 JSON 类型，兼容 MySQL，能够处理空字符串和无效JSON
     """
     impl = Text
     cache_ok = True
@@ -27,9 +27,12 @@ class JSONText(TypeDecorator):
         return json.dumps(value)
 
     def process_result_value(self, value, dialect):
-        if value is None or value == '':
+        if value is None or value == '' or value == 'null':
             return None
-        return json.loads(value)
+        try:
+            return json.loads(value)
+        except (json.JSONDecodeError, TypeError):
+            return None
 
 
 Base = declarative_base()
