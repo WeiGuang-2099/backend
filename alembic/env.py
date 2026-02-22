@@ -11,8 +11,10 @@ from alembic import context
 # 添加项目根目录到 Python 路径
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-# 导入项目配置和模型
-from app.models.user import Base
+# 导入共享的 Base 和所有模型（确保 Alembic 能检测到所有表）
+from app.core.database import Base
+from app.models.user import User  # noqa: F401
+from app.models.agent import Agent  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
