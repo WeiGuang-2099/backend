@@ -2,21 +2,18 @@
 Agent Repository Layer - 数字人数据访问层
 """
 from app.agent_repo.agent import (
-    get_agent_by_id,
-    get_agents_by_user_id,
-    get_agents_page,
-    count_agents_by_user_id,
-    create_agent,
-    update_agent,
-    delete_agent
+    AgentRepository,
+    agent_repository,
 )
 
+
+def get_agent_repository() -> AgentRepository:
+    """获取 AgentRepository 实例的工厂函数，用于依赖注入"""
+    return agent_repository
+
+
 __all__ = [
-    "get_agent_by_id",
-    "get_agents_by_user_id",
-    "get_agents_page",
-    "count_agents_by_user_id",
-    "create_agent",
-    "update_agent",
-    "delete_agent"
+    "AgentRepository",
+    "agent_repository",
+    "get_agent_repository",
 ]
