@@ -41,4 +41,3 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_table('messages')
     op.drop_table('conversations')
-    op.execute("DROP TYPE IF EXISTS message_role_enum")

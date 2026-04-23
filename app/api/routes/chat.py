@@ -2,6 +2,7 @@
 Chat API routes
 """
 import json
+import logging
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
@@ -15,6 +16,7 @@ from app.core.auth import get_current_user
 from app.core.database import get_db
 from app.services.chat_service import chat_service
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -44,7 +46,7 @@ async def get_messages(
     current_user: UserResponse = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    messages = chat_service.get_messages(db, conversation_id)
+    messages = chat_service.get_messages(db, conversation_id, current_user.id)
     return ApiResponse.success(data=messages)
 
 
@@ -66,6 +68,9 @@ async def stream_chat(
     db: Session = Depends(get_db),
 ):
     """SSE streaming chat endpoint."""
+    # Pre-flight validation: raise proper HTTP errors before entering SSE
+    chat_service.validate_stream_request(db, conversation_id, current_user.id)
+
     async def event_generator():
         try:
             async for token in chat_service.stream_chat(
@@ -77,6 +82,7 @@ async def stream_chat(
                 yield {"event": "message", "data": json.dumps({"token": token})}
             yield {"event": "done", "data": json.dumps({"status": "complete"})}
         except Exception as e:
-            yield {"event": "error", "data": json.dumps({"error": str(e)})}
+            logger.error(f"Stream error for conversation {conversation_id}: {e}", exc_info=True)
+            yield {"event": "error", "data": json.dumps({"error": "Stream interrupted"})}
 
     return EventSourceResponse(event_generator())

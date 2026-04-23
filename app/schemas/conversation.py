@@ -2,7 +2,7 @@
 Conversation and message schemas
 """
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from enum import Enum
 
@@ -15,7 +15,7 @@ class MessageRole(str, Enum):
 
 class ConversationCreate(BaseModel):
     agent_id: int
-    title: Optional[str] = None
+    title: Optional[str] = Field(None, max_length=200)
 
 
 class ConversationResponse(BaseModel):
@@ -42,13 +42,13 @@ class MessageResponse(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    content: str
+    content: str = Field(..., min_length=1, max_length=10000)
 
 
 class ConversationListRequest(BaseModel):
     agent_id: Optional[int] = None
-    skip: int = 0
-    limit: int = 50
+    skip: int = Field(0, ge=0)
+    limit: int = Field(50, ge=1, le=100)
 
 
 class ConversationIdRequest(BaseModel):

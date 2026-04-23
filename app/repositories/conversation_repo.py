@@ -3,6 +3,7 @@ Conversation CRUD operations
 """
 from typing import Optional, List
 from sqlalchemy.orm import Session
+from app.schemas.conversation import MessageRole
 from app.models.conversation import Conversation, Message
 from app.schemas.conversation import ConversationCreate
 
@@ -60,7 +61,7 @@ class ConversationRepository:
             .all()
         )
 
-    def add_message(self, db: Session, conversation_id: int, role: str, content: str, tokens_used: int = None) -> Message:
+    def add_message(self, db: Session, conversation_id: int, role: str, content: str, tokens_used: Optional[int] = None) -> Message:
         msg = Message(
             conversation_id=conversation_id,
             role=role,
