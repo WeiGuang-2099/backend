@@ -16,6 +16,7 @@ from app.core.database import Base
 from app.models.user import User  # noqa: F401
 from app.models.agent import Agent  # noqa: F401
 from app.models.conversation import Conversation, Message  # noqa: F401
+from app.models.knowledge import KnowledgeDocument  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
